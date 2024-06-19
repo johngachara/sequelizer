@@ -33,19 +33,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 //app.use('/', indexRouter);
 //app.use('/users', usersRouter);
-app.use('/Add', addAccessory);
-app.use('/Find', findOne);
+app.use('/Add',authMiddleware, addAccessory);
+app.use('/Find',authMiddleware, findOne);
 app.use('/FindAll',authMiddleware, findAll);
-app.use('/Update',updateAccessory);
-app.use('/Delete',deleteAccessory);
-app.use('/DeleteAll',deleteAll);
-app.use('/Save',save);
-app.use('/Complete',complete);
+app.use('/Update',authMiddleware,updateAccessory);
+app.use('/Delete',authMiddleware,deleteAccessory);
+app.use('/DeleteAll',authMiddleware,deleteAll);
+app.use('/Save',authMiddleware,save);
+app.use('/Complete',authMiddleware,complete);
 app.use('/authenticate',auth);
-app.use('/Adduser',addUser);
-app.use('/Sendmail',sendComplete);
-app.use('/incomplete',sendIncomplete)
-app.use('/Saved',savedTransactions)
+app.use('/Adduser',authMiddleware,addUser);
+app.use('/Sendmail',authMiddleware,sendComplete);
+app.use('/incomplete',authMiddleware,sendIncomplete)
+app.use('/Saved',authMiddleware,savedTransactions)
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
