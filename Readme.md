@@ -1,0 +1,1 @@
+This is an express js server containing api routes that interact with sequelizer ORM for perfoming CRUD operations on data from a POSTGRES database.
