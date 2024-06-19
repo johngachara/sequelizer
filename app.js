@@ -19,7 +19,7 @@ var {sendComplete,sendIncomplete} = require('./controllers/send_mail');
 var app = express();
 //const initializeFirebaseSDK = require("./firebase/firebase");
 //initializeFirebaseSDK();
-var sendMessage = require('./firebase/sendNotification')
+//var sendMessage = require('./firebase/sendNotification')
 var authMiddleware = require('./auth/authMiddleware')
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
