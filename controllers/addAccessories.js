@@ -26,7 +26,6 @@ router.post('/',
         if (!errors.isEmpty()) {
             return res.status(400).send({ errors: errors.array() });
         }
-        await client.index('Accessories').updateFilterableAttributes(['id']);
         try {
             const { product_name, quantity, price } = req.body;
             const accessoryExists = await Accessory.findOne({ where: { product_name: product_name } });
