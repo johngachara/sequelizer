@@ -2,7 +2,19 @@ var express = require('express');
 var router = express.Router();
 const Accessory = require('../models/accesories'); // Ensure this path and filename are correct
 const { body, validationResult } = require('express-validator');
-
+require('dotenv').config();
+const { MeiliSearch } = require('meilisearch');
+const client = new MeiliSearch({
+    host: process.env.MEILISEARCH_URL,
+    apiKey :process.env.API_KEY
+});
+(async () => {
+    try {
+        await client.index('Accessories').updateFilterableAttributes(['id']);
+    } catch (error) {
+        console.error('Error updating filterable attributes:', error);
+    }
+})();
 router.post('/',
     [
         body('product_name').notEmpty().withMessage('Product name is required').isString().withMessage('Product name must be a string'),
@@ -22,13 +34,33 @@ router.post('/',
                 return res.status(400).send("Item already exists");
             }
 
-            await Accessory.create({
+            const data = await Accessory.create({
                 product_name,
                 quantity,
                 price
             });
+            const checkData = await client.index('Accessories').search('', {
+                filter: `id = ${data.id}`,
+            });
 
-            res.status(201).send('Item successfully created');
+            if (checkData.hits.length > 0) {
+                return res.status(409).json({ error: 'Document with the same ID already exists' });
+            }
+
+
+            // Add the document to the index
+            const response = await client.index('Accessories').addDocuments([
+                {
+                    id: data.id,
+                    product_name: data.product_name,
+                    quantity: data.quantity,
+                    price: data.price,
+                },
+            ]);
+
+
+
+            res.status(201).send({'Item successfully Created': response});
         } catch (error) {
             return res.status(500).send(error.message); // 500 for server error
         }

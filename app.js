@@ -16,6 +16,7 @@ var auth = require('./auth/jwt')
 var savedTransactions = require('./controllers/savedTransactions')
 var addUser = require('./controllers/addUser')
 var {sendComplete,sendIncomplete} = require('./controllers/send_mail');
+var search = require('./controllers/search')
 var app = express();
 //const initializeFirebaseSDK = require("./firebase/firebase");
 //initializeFirebaseSDK();
@@ -44,8 +45,9 @@ app.use('/Complete',authMiddleware,complete);
 app.use('/authenticate',auth);
 app.use('/Adduser',authMiddleware,addUser);
 app.use('/Sendmail',authMiddleware,sendComplete);
-app.use('/incomplete',authMiddleware,sendIncomplete)
-app.use('/Saved',authMiddleware,savedTransactions)
+app.use('/incomplete',authMiddleware,sendIncomplete);
+app.use('/Saved',authMiddleware,savedTransactions);
+app.use('/Search',search);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

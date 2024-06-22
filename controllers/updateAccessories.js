@@ -2,7 +2,18 @@ const express = require('express');
 const router = express.Router();
 const Accessory = require('../models/accesories'); // Ensure this path and filename are correct
 const { validationResult, param ,body} = require('express-validator');
-
+const {MeiliSearch} = require("meilisearch");
+const client = new MeiliSearch({
+    host: process.env.MEILISEARCH_URL,
+    apiKey : process.env.API_KEY
+});
+(async () => {
+    try {
+        await client.index('Accessories').updateFilterableAttributes(['id']);
+    } catch (error) {
+        console.error('Error updating filterable attributes:', error);
+    }
+})();
 router.put('/:id',[
     param('id').notEmpty().withMessage('Id is required')
         .isInt().withMessage('Id is of invalid type'),
@@ -28,7 +39,21 @@ router.put('/:id',[
        accessory.quantity = quantity;
          accessory.price = price;
         await accessory.save();
-        res.status(200).send('Item successfully updated');
+
+        const checkID = await client.index('Accessories').search('', {
+            filter: `id = ${id}`
+        })
+        if (checkID.hits.length === 0) {
+            res.status(400).json({error: 'Document with the specified ID not found'});
+        }
+        const updateProduct = await client.index('Accessories').updateDocuments([{
+            id:id,
+            product_name:accessory.product_name,
+            quantity : accessory.quantity,
+            price : accessory.price,
+
+        }])
+        res.status(200).send({'Item successfully updated':updateProduct});
 
     }catch (err){
         return res.status(500).send(err.message);

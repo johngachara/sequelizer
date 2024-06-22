@@ -48,7 +48,7 @@ exports.sendComplete = router.get('/',async (req, res) => {
                         <div class="container">
                             <h1 class="title">Sold Accessories</h1>
                             <div class="content">
-                                <p>Here are Shop 2 purchased accessories</p>
+                                <p>Here are Shop 2 purchased accessories this week</p>
                                 <table class="table is-striped">
                                     <thead>
                                         <tr>
@@ -80,9 +80,9 @@ exports.sendComplete = router.get('/',async (req, res) => {
 
         let mailDetails = {
 
-            from: 'johngachara29@gmail.com',
+            from: process.env.GMAIL_USER,
 
-            to: 'jm723855440@gmail.com',
+            to: process.env. GMAIL_RECEIVER,
 
             subject: 'Sold Accessories',
 
@@ -120,8 +120,8 @@ exports.sendIncomplete = router.post('/',async (req, res) => {
                 {
                     service: 'gmail',
                     auth: {
-                        user: 'johngachara29@gmail.com',
-                        pass: 'onznunkzspvuvpen'
+                        user:process.env.GMAIL_USERNAME,
+                        pass: process.env.GMAIL_PASSWORD
                     }
                 }
             );
@@ -177,9 +177,9 @@ exports.sendIncomplete = router.post('/',async (req, res) => {
         };
         let mailDetails = {
 
-            from: 'johngachara29@gmail.com',
+            from: process.env.GMAIL_USER,
 
-            to: 'jm723855440@gmail.com',
+            to: process.env. GMAIL_RECEIVER,
 
             subject: 'Unpaid Accessories',
 

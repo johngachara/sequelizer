@@ -5,7 +5,19 @@ const saveDB = require('../models/saved');
 const completeDB = require('../models/complete');
 const receipt = require('../models/receipts');
 const { body, validationResult, param } = require('express-validator');
-
+const {MeiliSearch} = require("meilisearch");
+require('dotenv').config();
+const client = new MeiliSearch({
+    host: process.env.MEILISEARCH_URL,
+    apiKey : process.env.API_KEY
+});
+(async () => {
+    try {
+        await client.index('Accessories').updateFilterableAttributes(['id']);
+    } catch (error) {
+        console.error('Error updating filterable attributes:', error);
+    }
+})();
 exports.save = router.post('/:id', [
     param('id').notEmpty().withMessage('Product ID is required').isInt().withMessage('Invalid ID format'),
     body('product_name').notEmpty().withMessage('Product name is required').isString().withMessage('Product name must be a string'),
@@ -33,14 +45,33 @@ exports.save = router.post('/:id', [
         accessory.quantity -= quantity;
         await accessory.save();
 
-        await saveDB.create({
-            product_name: accessory.product_name,
+        await completeDB.create({
+            product_name,
             quantity,
             selling_price,
             customer
         });
 
-        res.status(201).send('Item successfully saved');
+        await receipt.create({
+            product_name,
+            quantity,
+            selling_price,
+            customer
+        });
+        const checkID = await client.index('Accessories').search('', {
+            filter: `id = ${id}`
+        })
+        if (checkID.hits.length === 0) {
+            res.status(400).json({error: 'Document with the specified ID not found'});
+        }
+        const updateProduct = await client.index('Accessories').updateDocuments([{
+            id:id,
+            product_name:accessory.product_name,
+            quantity : accessory.quantity,
+            price : accessory.price,
+
+        }])
+        res.status(201).send({'Item successfully sold':updateProduct});
     } catch (err) {
         console.error(err);
         res.status(500).send('Internal Server Error');

@@ -18,6 +18,7 @@
     "hbs": "^4.2.0",
     "http-errors": "~1.6.3",
     "jsonwebtoken": "^9.0.2",
+    "meilisearch": "^0.40.0",
     "morgan": "~1.9.1",
     "nodemailer": "^6.9.13",
     "pg": "^8.12.0",

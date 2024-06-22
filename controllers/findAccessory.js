@@ -33,15 +33,35 @@ exports.findOne = router.get('/:id', [
     }
 });
 
-exports.findAll = router.get('/', async (req,res)=>{
-    try{
-        const data = await Accessory.findAll();
-        if(!data.length > 0){
+exports.findAll = router.get('/', async (req, res) => {
+    const { page = 1, limit = 10 } = req.query;
+    // offset to count  where to begin displaying items
+    // limit is total number of items per page
+    // count is total number of items
+    // rows is paginated data
+    const offset = (page - 1) * limit;
+
+    try {
+        const { count, rows } = await Accessory.findAndCountAll({
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+        });
+
+        if (rows.length === 0) {
             return res.status(404).send('No items in database');
         }
-        return res.status(200).send(data);
 
-    }catch(err){
+        const totalPages = Math.ceil(count / limit);
+
+        const response = {
+            totalItems: count,
+            totalPages: totalPages,
+            currentPage: parseInt(page),
+            items: rows,
+        };
+
+        return res.status(200).send(response);
+    } catch (err) {
         return res.status(500).send(err.message);
     }
-})
+});
