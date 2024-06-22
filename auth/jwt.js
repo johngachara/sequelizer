@@ -30,7 +30,7 @@ router.post('/',[
                 id : verified_user.id
             }
         }
-        await jwt.sign(payload,secret, {expiresIn: '1h'},(err, token) => {
+        await jwt.sign(payload,secret, {expiresIn: '120h'},(err, token) => {
             if(err){
                 return res.status(401).send(err)
             }
