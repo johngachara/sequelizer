@@ -8,6 +8,13 @@ const client = new MeiliSearch({
     host: process.env.MEILISEARCH_URL,
     apiKey :process.env.API_KEY
 });
+(async () => {
+    try {
+        await client.index('Accessories').updateFilterableAttributes(['id']);
+    } catch (error) {
+        console.error('Error updating filterable attributes:', error);
+    }
+})();
 router.post('/',
     [
         body('product_name').notEmpty().withMessage('Product name is required').isString().withMessage('Product name must be a string'),
