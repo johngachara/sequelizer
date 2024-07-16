@@ -15,6 +15,8 @@ var {save,complete} = require('./controllers/sellAccessory')
 var auth = require('./auth/jwt')
 var savedTransactions = require('./controllers/savedTransactions')
 var addUser = require('./controllers/addUser')
+var{adminDashboard} = require('./controllers/adminDashboard')
+var details = require('./controllers/adminDetails')
 var {sendComplete,sendIncomplete} = require('./controllers/send_mail');
 var search = require('./controllers/search')
 var app = express();
@@ -48,6 +50,10 @@ app.use('/Sendmail',authMiddleware,sendComplete);
 app.use('/incomplete',authMiddleware,sendIncomplete);
 app.use('/Saved',authMiddleware,savedTransactions);
 app.use('/Search',search);
+app.get('/Admin',adminDashboard);
+app.get('/sales',details.detailedSales);
+app.get('/Products',details.detailedProducts);
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

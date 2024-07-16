@@ -21,7 +21,16 @@ const receipt = sequelize.define('receipt', {
     customer:{
         type: DataTypes.STRING,
         allowNull: false,
+    },
+    createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
     }
-})
+}, {
+    timestamps: true,
+    updatedAt: false, // We only want createdAt, not updatedAt
+});
+
 receipt.sync()
 module.exports = receipt;
