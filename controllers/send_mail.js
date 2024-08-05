@@ -17,7 +17,7 @@ exports.sendComplete = router.get('/', async (req, res) => {
         let transporter = nodemailer.createTransport({
             host: "smtp.gmail.com",
             port: 587,
-            secure: false, // Use TLS
+            secure: true, // Use TLS
             auth: {
                 user: process.env.GMAIL_USER,
                 pass: process.env.GMAIL_PASSWORD
