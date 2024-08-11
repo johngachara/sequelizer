@@ -104,7 +104,8 @@ exports.complete = router.get('/:id', [
             product_name: transaction.product_name,
             quantity: transaction.quantity,
             selling_price: transaction.selling_price,
-            customer: transaction.customer
+            customer: transaction.customer,
+            createdAt : new Date()
         });
 
         await saveDB.destroy({ where: { id: transaction_id } });
