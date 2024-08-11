@@ -100,12 +100,12 @@ exports.complete = router.get('/:id', [
             customer: transaction.customer
         });
 
+        // Remove the createdAt field from here
         await receipt.create({
             product_name: transaction.product_name,
             quantity: transaction.quantity,
             selling_price: transaction.selling_price,
-            customer: transaction.customer,
-            createdAt : new Date()
+            customer: transaction.customer
         });
 
         await saveDB.destroy({ where: { id: transaction_id } });
