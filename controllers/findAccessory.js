@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Accessory = require('../models/accesories'); // Ensure this path and filename are correct
 const { validationResult, param } = require('express-validator');
-
+const redisClient = require('../redis/redis')
 // Define the route to get an accessory by ID
 exports.findOne = router.get('/:id', [
     param('id')
@@ -35,13 +35,18 @@ exports.findOne = router.get('/:id', [
 
 exports.findAll = router.get('/', async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
-    // offset to count  where to begin displaying items
-    // limit is total number of items per page
-    // count is total number of items
-    // rows is paginated data
     const offset = (page - 1) * limit;
+    const cacheKey = `accessories:page=${page}:limit=${limit}`;
 
     try {
+        // Try to get data from Redis
+        const cachedData = await redisClient.get(cacheKey);
+
+        if (cachedData) {
+            return res.status(200).send(JSON.parse(cachedData));
+        }
+
+        // If not in cache, query the database
         const { count, rows } = await Accessory.findAndCountAll({
             limit: parseInt(limit),
             offset: parseInt(offset),
@@ -59,6 +64,9 @@ exports.findAll = router.get('/', async (req, res) => {
             currentPage: parseInt(page),
             items: rows,
         };
+
+        // Cache the result for future requests (e.g., for 5 minutes)
+        await redisClient.setEx(cacheKey, 300, JSON.stringify(response));
 
         return res.status(200).send(response);
     } catch (err) {

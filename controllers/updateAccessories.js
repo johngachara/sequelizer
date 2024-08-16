@@ -3,6 +3,7 @@ const router = express.Router();
 const Accessory = require('../models/accesories'); // Ensure this path and filename are correct
 const { validationResult, param ,body} = require('express-validator');
 const {MeiliSearch} = require("meilisearch");
+const redisClient = require('../redis/redis')
 const client = new MeiliSearch({
     host: process.env.MEILISEARCH_URL,
     apiKey : process.env.API_KEY
@@ -53,6 +54,9 @@ router.put('/:id',[
             price : accessory.price,
 
         }])
+        // Invalidate the cache for this specific accessory and the list
+        await redisClient.del(`accessory:${id}`);
+        await redisClient.del('accessories:list');
         res.status(200).send({'Item successfully updated':updateProduct});
 
     }catch (err){

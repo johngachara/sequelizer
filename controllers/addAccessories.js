@@ -3,6 +3,7 @@ var router = express.Router();
 const Accessory = require('../models/accesories'); // Ensure this path and filename are correct
 const { body, validationResult } = require('express-validator');
 require('dotenv').config();
+const redisClient = require('../redis/redis')
 const { MeiliSearch } = require('meilisearch');
 const client = new MeiliSearch({
     host: process.env.MEILISEARCH_URL,
@@ -58,7 +59,7 @@ router.post('/',
                 },
             ]);
 
-
+            await redisClient.del('accessories:list');
 
             res.status(201).send({'Item successfully Created': response});
         } catch (error) {

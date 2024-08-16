@@ -6,6 +6,7 @@ const completeDB = require('../models/complete');
 const receipt = require('../models/receipts');
 const { body, validationResult, param } = require('express-validator');
 const {MeiliSearch} = require("meilisearch");
+const redisClient = require('../redis/redis')
 require('dotenv').config();
 const client = new MeiliSearch({
     host: process.env.MEILISEARCH_URL,
@@ -71,6 +72,9 @@ exports.save = router.post('/:id', [
             price : accessory.price,
 
         }])
+        await redisClient.del(`accessory:${id}`);
+        await redisClient.del('accessories:list');
+
         res.status(201).send({'Item successfully sold':updateProduct});
     } catch (err) {
         console.error(err);
