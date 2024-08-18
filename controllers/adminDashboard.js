@@ -21,14 +21,15 @@ exports.adminDashboard = async (req, res) => {
             limit: 5
         });
 
-        // Customer Analysis
+
+        // Customer Analysis (case-insensitive)
         const customerAnalysis = await Receipt.findAll({
             attributes: [
-                'customer',
+                [fn('LOWER', col('customer')), 'customer_lower'],
                 [fn('COUNT', col('id')), 'total_transactions'],
                 [fn('SUM', col('selling_price')), 'total_spend']
             ],
-            group: ['customer'],
+            group: [fn('LOWER', col('customer'))],
             order: [[fn('SUM', col('selling_price')), 'DESC']],
             limit: 10
         });
