@@ -1,7 +1,7 @@
 const redis = require('redis');
 
 const redisClient = redis.createClient({
-    url: process.env.REDIS_HOST,
+    url: process.env.REDIS_HOST_SEQUEL,
     password: process.env.REDIS_PASSWORD
 });
 
