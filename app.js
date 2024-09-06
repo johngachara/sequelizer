@@ -20,9 +20,6 @@ var details = require('./controllers/adminDetails')
 var {sendComplete,sendIncomplete} = require('./controllers/send_mail');
 var search = require('./controllers/search')
 var app = express();
-//const initializeFirebaseSDK = require("./firebase/firebase");
-//initializeFirebaseSDK();
-//var sendMessage = require('./firebase/sendNotification')
 var authMiddleware = require('./auth/authMiddleware')
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -34,8 +31,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-//app.use('/', indexRouter);
-//app.use('/users', usersRouter);
+
 app.use('/Add',authMiddleware, addAccessory);
 app.use('/Find',authMiddleware, findOne);
 app.use('/FindAll',authMiddleware, findAll);
