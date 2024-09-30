@@ -20,7 +20,30 @@ var authMiddleware = require('./auth/authMiddleware')
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
-app.use(cors())
+// List of allowed origins
+const allowedOrigins = [
+  'https://main.gachara.store',
+  'http://localhost',
+];
+
+// CORS options
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+// Custom handling for OPTIONS requests
+app.options('*', cors(corsOptions)); // Pre-flight request handling
+
+// Use CORS middleware
+app.use(cors(corsOptions));
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
