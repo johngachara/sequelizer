@@ -1,45 +1,52 @@
-const dotenv = require('dotenv');
-const jwt = require('jsonwebtoken');
-dotenv.config();
-const secret = process.env.SECRET_KEY;
-const user = require('../models/user')
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const router = express.Router();
-const { body, validationResult } = require('express-validator');
-router.post('/',[
-    body('username').notEmpty().withMessage('Username is required').isString().withMessage('Username must be a string'),
-    body('password').notEmpty().withMessage('Password is required').isString().withMessage('Password must be a string'),
-],async (req, res) => {
-    const errors = validationResult(req);
-    if(!errors.isEmpty()) {
-        return res.status(400).json({errors: errors.array()});
+const jwt = require('jsonwebtoken');
+const user = require('../models/user');
+require('dotenv').config();
+const {auth} = require('../firebase/firebase')
+const secret = process.env.SECRET_KEY;
+
+
+
+router.post('/', async (req, res) => {
+    const { idToken } = req.body;
+    console.log(idToken)
+    if (!idToken) {
+        return res.status(400).json({ error: 'Firebase ID token is required' });
     }
-    const {username,password} = req.body;
-    try{
-        const verified_user =  await user.findOne({ where: { username } });
-        if(!verified_user){
-            return res.status(404).send('User not found');
+
+    try {
+        // Verify the Firebase ID token
+        const decodedToken = await auth.verifyIdToken(idToken.firebaseToken);
+        const uid = decodedToken.uid;
+        console.log(uid)
+        // Check if the UID is in the allowed list in your database
+        const allowedUser = await user.findOne({ where: { firebase_uid: uid } });
+        console.log('Allowed user:', allowedUser);
+        if (!allowedUser) {
+            return res.status(403).json({ error: 'User not authorized' });
         }
-        const isMatch = await bcrypt.compare(password, verified_user.password);
-        if (!isMatch) {
-            return res.status(400).json({ msg: 'invalid password' });
-        }
+
+        // If the user is authorized, create a JWT
         const payload = {
-            user : {
-                id : verified_user.id
+            user: {
+                id: allowedUser.id,
+                firebase_uid: uid
             }
-        }
-        await jwt.sign(payload,secret, {expiresIn: '120h'},(err, token) => {
-            if(err){
-                return res.status(401).send(err)
+        };
+
+        jwt.sign(payload, secret, { expiresIn: '120h' }, (err, token) => {
+            if (err) {
+                console.error('Error creating JWT:', err);
+                return res.status(500).json({ error: 'Error creating token' });
             }
             return res.json({ token });
         });
-        //next()
 
-    }catch(err) {
-        res.status(500).send(err.message)
+    } catch (error) {
+        console.error('Error verifying Firebase ID token:', error);
+        return res.status(401).json({ error: error.message });
     }
-})
-module.exports = router
+});
+
+module.exports = router;

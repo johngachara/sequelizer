@@ -4,9 +4,6 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const cors = require('cors');
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var connection = require('./controllers/connection')
 var {findOne,findAll} = require('./controllers/findAccessory')
 var addAccessory = require('./controllers/addAccessories')
 var updateAccessory = require('./controllers/updateAccessories')
@@ -18,7 +15,6 @@ var addUser = require('./controllers/addUser')
 var{adminDashboard} = require('./controllers/adminDashboard')
 var details = require('./controllers/adminDetails')
 var {sendComplete,sendIncomplete} = require('./controllers/send_mail');
-var search = require('./controllers/search')
 var app = express();
 var authMiddleware = require('./auth/authMiddleware')
 // view engine setup
@@ -37,7 +33,6 @@ app.use('/Find',authMiddleware, findOne);
 app.use('/FindAll',authMiddleware, findAll);
 app.use('/Update',authMiddleware,updateAccessory);
 app.use('/Delete',authMiddleware,deleteAccessory);
-//app.use('/DeleteAll',authMiddleware,deleteAll);
 app.use('/Save',authMiddleware,save);
 app.use('/Complete',authMiddleware,complete);
 app.use('/authenticate',auth);
@@ -45,7 +40,6 @@ app.use('/Adduser',authMiddleware,addUser);
 app.use('/Sendmail',authMiddleware,sendComplete);
 app.use('/incomplete',authMiddleware,sendIncomplete);
 app.use('/Saved',authMiddleware,savedTransactions);
-//app.use('/Search',search);
 app.get('/Admin',adminDashboard);
 app.get('/sales',details.detailedSales);
 app.get('/Products',details.detailedProducts);

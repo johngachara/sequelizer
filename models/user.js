@@ -6,14 +6,11 @@ const user = sequelize.define('user', {
         autoIncrement: true,
         primaryKey: true,
     },
-    username: {
+    firebase_uid: {
         type: DataTypes.STRING,
+        unique: true,
         allowNull: false,
     },
-    password:{
-        type: DataTypes.STRING,
-        allowNull: false,
-    }
 })
 user.sync()
 module.exports = user
