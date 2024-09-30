@@ -23,7 +23,7 @@ app.set('view engine', 'hbs');
 // List of allowed origins
 const allowedOrigins = [
   'https://main.gachara.store',
-  'http://localhost',
+  'http://localhost:3000',
 ];
 
 // CORS options
