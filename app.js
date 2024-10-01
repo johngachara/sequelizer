@@ -20,16 +20,15 @@ var authMiddleware = require('./auth/authMiddleware')
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
-// List of allowed origins
-const allowedOrigins = [
-  'https://main.gachara.store',
-  'http://localhost:3000',
-];
 
-// CORS options
+// CORS configuration
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    // Add your frontend URL to this list
+    const allowedOrigins = ['https://main.gachara.store', 'http://localhost:3000'];
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -38,9 +37,11 @@ const corsOptions = {
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
-// Custom handling for OPTIONS requests
-app.options('*', cors(corsOptions)); // Pre-flight request handling
+
+// Apply CORS middleware before your routes
+app.use(cors(corsOptions));
 
 // Use CORS middleware
 app.use(cors(corsOptions));
@@ -66,6 +67,17 @@ app.use('/Saved',authMiddleware,savedTransactions);
 app.get('/Admin',adminDashboard);
 app.get('/sales',details.detailedSales);
 app.get('/Products',details.detailedProducts);
+// CORS error handler
+app.use((err, req, res, next) => {
+  if (err.message === 'Not allowed by CORS') {
+    res.status(403).json({
+      message: 'CORS error: Origin not allowed',
+      error: err
+    });
+  } else {
+    next(err);
+  }
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
