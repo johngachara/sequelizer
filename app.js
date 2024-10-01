@@ -28,8 +28,8 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     // Add your frontend URL to this list
-    const allowedOrigins ='http://localhost:3000'
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    const allowedOrigins =['http://localhost:3000']
+    if (allowedOrigins.includes(origin)) { // Use includes instead of indexOf
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
