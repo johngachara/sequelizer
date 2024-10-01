@@ -28,7 +28,7 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     // Add your frontend URL to this list
-    const allowedOrigins = ['https://main.gachara.store', 'http://localhost:3000'];
+    const allowedOrigins ='http://localhost:3000'
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
