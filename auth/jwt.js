@@ -10,7 +10,6 @@ const secret = process.env.SECRET_KEY;
 
 router.post('/', async (req, res) => {
     const { idToken } = req.body;
-    console.log(idToken)
     if (!idToken) {
         return res.status(400).json({ error: 'Firebase ID token is required' });
     }
@@ -19,10 +18,8 @@ router.post('/', async (req, res) => {
         // Verify the Firebase ID token
         const decodedToken = await auth.verifyIdToken(idToken.firebaseToken);
         const uid = decodedToken.uid;
-        console.log(uid)
         // Check if the UID is in the allowed list in your database
         const allowedUser = await user.findOne({ where: { firebase_uid: uid } });
-        console.log('Allowed user:', allowedUser);
         if (!allowedUser) {
             return res.status(403).json({ error: 'User not authorized' });
         }
@@ -35,7 +32,7 @@ router.post('/', async (req, res) => {
             }
         };
 
-        jwt.sign(payload, secret, { expiresIn: '120h' }, (err, token) => {
+        jwt.sign(payload, secret, { expiresIn: '30h' }, (err, token) => {
             if (err) {
                 console.error('Error creating JWT:', err);
                 return res.status(500).json({ error: 'Error creating token' });

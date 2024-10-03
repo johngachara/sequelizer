@@ -17,7 +17,8 @@ var details = require('./controllers/adminDetails');
 var { sendComplete, sendIncomplete } = require('./controllers/send_mail');
 var app = express();
 var authMiddleware = require('./auth/authMiddleware');
-
+var celeryMiddleware = require('./auth/celeryMiddleware');
+var celeryAuth = require('./auth/celeryAuth')
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
@@ -59,9 +60,10 @@ app.use('/Save', authMiddleware, save);
 app.use('/Complete', authMiddleware, complete);
 app.use('/authenticate', auth);
 app.use('/Adduser', authMiddleware, addUser);
-app.use('/Sendmail', authMiddleware, sendComplete);
+app.use('/Sendmail', celeryMiddleware, sendComplete);
 app.use('/incomplete', authMiddleware, sendIncomplete);
 app.use('/Saved', authMiddleware, savedTransactions);
+app.use('/celeryAuth', celeryAuth);
 app.get('/Admin', adminDashboard);
 app.get('/sales', details.detailedSales);
 app.get('/Products', details.detailedProducts);
