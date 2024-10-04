@@ -28,7 +28,7 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    // Add your frontend URL to this list
+    // Add frontend URL to this list
     const allowedOrigins =['http://localhost:3000',"https://main.gachara.store"]
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -64,9 +64,9 @@ app.use('/Sendmail', celeryMiddleware, sendComplete);
 app.use('/incomplete', authMiddleware, sendIncomplete);
 app.use('/Saved', authMiddleware, savedTransactions);
 app.use('/celeryAuth', celeryAuth);
-app.get('/Admin', adminDashboard);
-app.get('/sales', details.detailedSales);
-app.get('/Products', details.detailedProducts);
+app.get('/Admin',authMiddleware ,adminDashboard);
+app.get('/sales',authMiddleware ,details.detailedSales);
+app.get('/Products',authMiddleware ,details.detailedProducts);
 
 // CORS error handler
 app.use((err, req, res, next) => {
