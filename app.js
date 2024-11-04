@@ -48,10 +48,13 @@ app.use(cors(corsOptions));
 // Add cache-disabling middleware here
 app.use((req, res, next) => {
   res.set({
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, private',
     'Pragma': 'no-cache',
     'Expires': '0',
-    'Surrogate-Control': 'no-store'
+    'Surrogate-Control': 'no-store',
+    'Clear-Site-Data': '"cache"',
+    'Vary': '*',
+    'Private': 'no-cache, private' // Forces the browser to always revalidate
   });
   next();
 });
