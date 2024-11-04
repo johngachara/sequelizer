@@ -44,6 +44,20 @@ const corsOptions = {
 
 // Apply CORS middleware before your routes
 app.use(cors(corsOptions));
+// Add cache-disabling middleware here
+app.use((req, res, next) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
+  next();
+});
+
+// Also disable Express's default ETag generation
+app.disable('etag');
+
 
 app.use(logger('dev'));
 app.use(express.json());
