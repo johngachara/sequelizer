@@ -18,18 +18,20 @@ var { sendComplete, sendIncomplete } = require('./controllers/send_mail');
 var app = express();
 var authMiddleware = require('./auth/authMiddleware');
 var celeryMiddleware = require('./auth/celeryMiddleware');
-var celeryAuth = require('./auth/celeryAuth')
+var celeryAuth = require('./auth/celeryAuth');
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
+app.disable('etag');
+app.disable('view cache');
+app.set('x-powered-by', false);
 
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    // Add frontend URL to this list
-    const allowedOrigins =['http://localhost:3000',"https://main.gachara.store"]
+    const allowedOrigins = ['http://localhost:3000', "https://main.gachara.store"];
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -39,29 +41,33 @@ const corsOptions = {
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-  maxAge : 0 //disabling cors caching
+  optionsSuccessStatus: 200,
+  maxAge: 0 // disabling cors caching
 };
 
-// Apply CORS middleware before your routes
+// Apply CORS middleware
 app.use(cors(corsOptions));
-// Add cache-disabling middleware here
-app.use((req, res, next) => {
+
+// Enhanced cache prevention middleware
+app.use((_req, res, next) => {
   res.set({
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, private',
+    'Cache-Control': 'private, no-cache, no-store, must-revalidate, max-age=0',
     'Pragma': 'no-cache',
     'Expires': '0',
     'Surrogate-Control': 'no-store',
-    'Clear-Site-Data': '"cache"',
+    'Clear-Site-Data': '"cache", "cookies", "storage"',
     'Vary': '*',
-    'Private': 'no-cache, private' // Forces the browser to always revalidate
+    'Last-Modified': new Date().toUTCString()
   });
   next();
 });
 
-// Also disable Express's default ETag generation
-app.disable('etag');
-
+// Force fresh database queries middleware
+app.use((req, _res, next) => {
+  req.headers['if-none-match'] = String(Date.now());
+  req.headers['sequelize-force-refresh'] = 'true';
+  next();
+});
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -69,6 +75,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Routes
 app.use('/Add', authMiddleware, addAccessory);
 app.use('/Find', authMiddleware, findOne);
 app.use('/FindAll', authMiddleware, findAll);
@@ -82,9 +89,22 @@ app.use('/Sendmail', celeryMiddleware, sendComplete);
 app.use('/incomplete', authMiddleware, sendIncomplete);
 app.use('/Saved', authMiddleware, savedTransactions);
 app.use('/celeryAuth', celeryAuth);
-app.get('/Admin',authMiddleware ,adminDashboard);
-app.get('/sales',authMiddleware ,details.detailedSales);
-app.get('/Products',authMiddleware ,details.detailedProducts);
+app.get('/Admin', authMiddleware, adminDashboard);
+app.get('/sales', authMiddleware, details.detailedSales);
+app.get('/Products', authMiddleware, details.detailedProducts);
+
+// Response interceptor for fresh JSON responses
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function(data) {
+    const responseData = {
+      ...data,
+      _timestamp: Date.now()
+    };
+    return originalJson.call(this, responseData);
+  };
+  next();
+});
 
 // CORS error handler
 app.use((err, req, res, next) => {
@@ -98,25 +118,22 @@ app.use((err, req, res, next) => {
   }
 });
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
+// 404 handler
+app.use(function(req, res, next) {
   next(createError(404));
+});
+
+// Error handler
+app.use(function(err, req, res, next) {
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.status(err.status || 500);
+  res.render('error');
 });
 
 const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-});
-
-// error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
 });
 
 module.exports = app;
