@@ -63,7 +63,7 @@ app.use((_req, res, next) => {
     'Pragma': 'no-cache',
     'Expires': '0',
     'Surrogate-Control': 'no-store',
-    'Clear-Site-Data': '"cache", "cookies", "storage"',
+    'Clear-Site-Data': '"cache"',
     'Vary': '*',
     'Last-Modified': new Date().toUTCString()
   });
