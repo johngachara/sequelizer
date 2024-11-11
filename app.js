@@ -19,7 +19,15 @@ var app = express();
 var authMiddleware = require('./auth/authMiddleware');
 var celeryMiddleware = require('./auth/celeryMiddleware');
 var celeryAuth = require('./auth/celeryAuth');
-
+var {findOne : getAccessory,findAll:getAllAccessories} = require('./controllers/firestoreControllers/findAccessories')
+var addAccessories = require('./controllers/firestoreControllers/addAccessories')
+var updateAccessories = require('./controllers/firestoreControllers/updateAccessories')
+var{deleteAllAccessories,deleteOneAccessory} = require('./controllers/firestoreControllers/deleteAccessories')
+var sellAccessories = require('./controllers/firestoreControllers/sellAccessories')
+var copyData = require('./controllers/firestoreControllers/copyData')
+var authenticate = require('./auth/firestoreJWT')
+var firestoreMiddleware = require('./auth/firestoreVerify')
+const {verify} = require("jsonwebtoken");
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
@@ -61,14 +69,6 @@ app.use((_req, res, next) => {
   });
   next();
 });
-
-// Force fresh database queries middleware
-app.use((req, _res, next) => {
-  req.headers['if-none-match'] = String(Date.now());
-  req.headers['sequelize-force-refresh'] = 'true';
-  next();
-});
-
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -77,21 +77,30 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/Add', authMiddleware, addAccessory);
-app.use('/Find', authMiddleware, findOne);
-app.use('/FindAll', authMiddleware, findAll);
-app.use('/Update', authMiddleware, updateAccessory);
-app.use('/Delete', authMiddleware, deleteAccessory);
-app.use('/Save', authMiddleware, save);
-app.use('/Complete', authMiddleware, complete);
-app.use('/authenticate', auth);
-app.use('/Adduser', authMiddleware, addUser);
-app.use('/Sendmail', celeryMiddleware, sendComplete);
-app.use('/incomplete', authMiddleware, sendIncomplete);
-app.use('/Saved', authMiddleware, savedTransactions);
-app.use('/celeryAuth', celeryAuth);
-app.get('/Admin', authMiddleware, adminDashboard);
-app.get('/sales', authMiddleware, details.detailedSales);
-app.get('/Products', authMiddleware, details.detailedProducts);
+app.use('/api/getAccessory',firestoreMiddleware, getAccessory);
+app.use('/api/getAll',firestoreMiddleware,getAllAccessories)
+app.use('/api/addAccessories',firestoreMiddleware, addAccessories);
+app.use('/api/updateAccessories',firestoreMiddleware,updateAccessories)
+app.use('/api/deleteAccessory',firestoreMiddleware,deleteOneAccessory)
+//app.use('/api/copyData',copyData)
+//app.use('/api/deleteAllAccessories',firestoreMiddleware,deleteAllAccessories)
+app.use('/api/sellAccessories',firestoreMiddleware,sellAccessories)
+app.use('/api/authenticate',authenticate)
+// app.use('/Find', authMiddleware, findOne);
+// app.use('/FindAll', authMiddleware, findAll);
+// app.use('/Update', authMiddleware, updateAccessory);
+// app.use('/Delete', authMiddleware, deleteAccessory);
+// app.use('/Save', authMiddleware, save);
+// app.use('/Complete', authMiddleware, complete);
+// app.use('/authenticate', auth);
+// app.use('/Adduser', authMiddleware, addUser);
+// app.use('/Sendmail', celeryMiddleware, sendComplete);
+// app.use('/incomplete', authMiddleware, sendIncomplete);
+// app.use('/Saved', authMiddleware, savedTransactions);
+// app.use('/celeryAuth', celeryAuth);
+// app.get('/Admin', authMiddleware, adminDashboard);
+// app.get('/sales', authMiddleware, details.detailedSales);
+// app.get('/Products', authMiddleware, details.detailedProducts);
 
 // Response interceptor for fresh JSON responses
 app.use((req, res, next) => {

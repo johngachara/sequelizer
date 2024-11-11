@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const user = require('../models/user');
+const { auth } = require('../firebase/firebase');
+const {db} = require('../firebase/firebase')
 require('dotenv').config();
-const {auth} = require('../firebase/firebase')
+
 const secret = process.env.SECRET_KEY;
-
-
 
 router.post('/', async (req, res) => {
     const { idToken } = req.body;
@@ -18,35 +17,46 @@ router.post('/', async (req, res) => {
         // Verify the Firebase ID token
         const decodedToken = await auth.verifyIdToken(idToken);
         const uid = decodedToken.uid;
-        console.log(uid)
-        // Check if the UID is in the allowed list in your database
-        const users = await user.findAll()
-        console.log(users)
-        const allowedUser = await user.findOne({ where: { firebase_uid: uid } });
-        if (!allowedUser) {
+
+        // Check if the user exists in Firestore users collection
+        const userRef = db.collection('users').doc(uid);
+        const userDoc = await userRef.get();
+
+        if (!userDoc.exists) {
             return res.status(403).json({ error: 'User not authorized' });
         }
 
-        // If the user is authorized, create a JWT
+        // Get user data
+        const userData = userDoc.data();
+
+        // Create JWT payload
         const payload = {
             user: {
-                id: allowedUser.id,
-                firebase_uid: uid
+                id: uid,  // Using Firebase UID as the main identifier
+                username: userData.username,
+                role: userData.role // If you store roles in your users collection
             }
         };
 
+        // Sign JWT
         jwt.sign(payload, secret, { expiresIn: '30h' }, (err, token) => {
             if (err) {
                 console.error('Error creating JWT:', err);
                 return res.status(500).json({ error: 'Error creating token' });
             }
-            return res.json({ token });
+            return res.json({
+                token,
+                user: {
+                    id: uid,
+                    username: userData.username,
+                    role: userData.role,
+                }
+            });
         });
 
     } catch (error) {
-        console.error('Error verifying Firebase ID token:', error);
+        console.error('Error in authentication:', error);
         return res.status(401).json({ error: error.message });
     }
 });
-
-module.exports = router;
+module.exports =  router
