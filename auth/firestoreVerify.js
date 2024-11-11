@@ -30,11 +30,6 @@ module.exports = async function (req, res, next) {
 
         const userData = userDoc.data();
 
-        // Check if user is active/not disabled
-        if (userData.disabled === true) {
-            return res.status(403).json({ msg: 'User account is disabled' });
-        }
-
         // Attach extended user information to the request object
         req.user = {
             ...decoded.user,
