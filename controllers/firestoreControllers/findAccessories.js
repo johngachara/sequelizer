@@ -35,7 +35,7 @@ exports.findOne = router.get('/:id', [
 
 // Find all accessories with pagination
 exports.findAll = router.get('/', async (req, res) => {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 12 } = req.query;
     const offset = (page - 1) * limit;
 
     try {
