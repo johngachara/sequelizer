@@ -17,7 +17,7 @@
     "firebase-admin": "^12.1.1",
     "hbs": "^4.2.0",
     "helmet": "^8.0.0",
-    "http-errors": "~1.6.3",
+    "http-errors": "~2.0.0",
     "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.2",
     "meilisearch": "^0.40.0",
