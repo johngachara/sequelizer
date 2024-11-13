@@ -2,7 +2,7 @@
 // Delete accessory
 const express = require('express');
 const router = express.Router();
-const {db,firebase} = require('../../firebase/firebase')
+const {db} = require('../../firebase/firebase')
 const accessoriesRef = db.collection('accessories');
 const {param, validationResult} = require("express-validator");
 const {MeiliSearch} = require("meilisearch");

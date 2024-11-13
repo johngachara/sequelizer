@@ -1,20 +1,11 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
+const helmet = require("helmet");
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const cors = require('cors');
-var { findOne, findAll } = require('./controllers/findAccessory');
 var addAccessory = require('./controllers/addAccessories');
-var updateAccessory = require('./controllers/updateAccessories');
-var { deleteAccessory, deleteAll } = require('./controllers/deleteAccessories');
-var { save, complete } = require('./controllers/sellAccessory');
-var auth = require('./auth/jwt');
-var savedTransactions = require('./controllers/savedTransactions');
-var addUser = require('./controllers/addUser');
-var { adminDashboard } = require('./controllers/adminDashboard');
-var details = require('./controllers/adminDetails');
-var { sendComplete, sendIncomplete } = require('./controllers/send_mail');
 var app = express();
 var authMiddleware = require('./auth/authMiddleware');
 var celeryMiddleware = require('./auth/celeryMiddleware');
@@ -22,19 +13,25 @@ var celeryAuth = require('./auth/celeryAuth');
 var {findOne : getAccessory,findAll:getAllAccessories} = require('./controllers/firestoreControllers/findAccessories')
 var addAccessories = require('./controllers/firestoreControllers/addAccessories')
 var updateAccessories = require('./controllers/firestoreControllers/updateAccessories')
-var{deleteAllAccessories,deleteOneAccessory} = require('./controllers/firestoreControllers/deleteAccessories')
+var{deleteOneAccessory} = require('./controllers/firestoreControllers/deleteAccessories')
 var sellAccessories = require('./controllers/firestoreControllers/sellAccessories')
-var copyData = require('./controllers/firestoreControllers/copyData')
 var authenticate = require('./auth/firestoreJWT')
 var firestoreMiddleware = require('./auth/firestoreVerify')
-const {verify} = require("jsonwebtoken");
+var migrateReceipts = require('./controllers/firestoreControllers/migrateReceipts')
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 app.disable('etag');
 app.disable('view cache');
-app.set('x-powered-by', false);
-
+app.disable('x-powered-by');
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      styleSrc : ["'self'"]
+    }
+  },
+  crossOriginResourcePolicy: { policy: "same-site" }
+}))
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
@@ -81,9 +78,8 @@ app.use('/api/getAll',firestoreMiddleware,getAllAccessories)
 app.use('/api/addAccessories',firestoreMiddleware, addAccessories);
 app.use('/api/updateAccessories',firestoreMiddleware,updateAccessories)
 app.use('/api/deleteAccessory',firestoreMiddleware,deleteOneAccessory)
-//app.use('/api/copyData',copyData)
-//app.use('/api/deleteAllAccessories',firestoreMiddleware,deleteAllAccessories)
 app.use('/api/sellAccessories',firestoreMiddleware,sellAccessories)
+app.use('/api/migrate', migrateReceipts)
 app.use('/api/authenticate',authenticate)
 // app.use('/Find', authMiddleware, findOne);
 // app.use('/FindAll', authMiddleware, findAll);

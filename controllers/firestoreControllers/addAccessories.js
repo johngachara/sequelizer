@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { body, validationResult, param } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const { MeiliSearch } = require('meilisearch');
 require('dotenv').config();
 
