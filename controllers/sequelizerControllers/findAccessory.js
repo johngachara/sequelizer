@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const Accessory = require('../models/accesories'); // Ensure this path and filename are correct
+const Accessory = require('../../models/accesories'); // Ensure this path and filename are correct
 const { validationResult, param } = require('express-validator');
-const redisClient = require('../redis/redis')
+const redisClient = require('../../redis/redis')
 // Define the route to get an accessory by ID
 exports.findOne = router.get('/:id', [
     param('id')

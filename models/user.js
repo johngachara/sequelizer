@@ -1,5 +1,5 @@
 const {  DataTypes } = require('sequelize');
-const sequelize =require('../controllers/connection')
+const sequelize =require('../controllers/sequelizerControllers/connection')
 const user = sequelize.define('user', {
     id:{
         type: DataTypes.INTEGER,

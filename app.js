@@ -1,39 +1,43 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
 const helmet = require("helmet");
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 const cors = require('cors');
-var addAccessory = require('./controllers/addAccessories');
-var app = express();
-var authMiddleware = require('./auth/authMiddleware');
-var celeryMiddleware = require('./auth/celeryMiddleware');
-var celeryAuth = require('./auth/celeryAuth');
-var {findOne : getAccessory,findAll:getAllAccessories} = require('./controllers/firestoreControllers/findAccessories')
-var addAccessories = require('./controllers/firestoreControllers/addAccessories')
-var updateAccessories = require('./controllers/firestoreControllers/updateAccessories')
-var{deleteOneAccessory} = require('./controllers/firestoreControllers/deleteAccessories')
-var sellAccessories = require('./controllers/firestoreControllers/sellAccessories')
-var authenticate = require('./auth/firestoreJWT')
-var firestoreMiddleware = require('./auth/firestoreVerify')
-var migrateReceipts = require('./controllers/firestoreControllers/migrateReceipts')
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'hbs');
-app.disable('etag');
-app.disable('view cache');
-app.disable('x-powered-by');
-app.use(helmet({
+const http = require('http');
+
+// Import controllers
+const {
+  findOne: getAccessory,
+  findAll: getAllAccessories
+} = require('./controllers/firestoreControllers/findAccessories');
+const addAccessories = require('./controllers/firestoreControllers/addAccessories');
+const updateAccessories = require('./controllers/firestoreControllers/updateAccessories');
+const { deleteOneAccessory } = require('./controllers/firestoreControllers/deleteAccessories');
+const sellAccessories = require('./controllers/firestoreControllers/sellAccessories');
+const sendSale = require('./controllers/firestoreControllers/sendSales');
+
+// Import middleware
+const celeryMiddleware = require('./auth/celeryMiddleware');
+const celeryAuth = require('./auth/celeryAuth');
+const authenticate = require('./auth/firestoreJWT');
+const firestoreMiddleware = require('./auth/firestoreVerify');
+
+// Initialize express app
+const app = express();
+
+// Security configurations
+const helmetConfig = {
   contentSecurityPolicy: {
     directives: {
-      styleSrc : ["'self'"]
+      styleSrc: ["'self'"]
     }
   },
   crossOriginResourcePolicy: { policy: "same-site" }
-}))
-// CORS configuration
-const corsOptions = {
+};
+
+const corsConfig = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
     const allowedOrigins = ['http://localhost:3000', "https://main.gachara.store"];
@@ -50,10 +54,25 @@ const corsOptions = {
   maxAge: 0 // disabling cors caching
 };
 
-// Apply CORS middleware
-app.use(cors(corsOptions));
+// View engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'hbs');
 
-// Enhanced cache prevention middleware
+// Disable various caching mechanisms
+app.disable('etag');
+app.disable('view cache');
+app.disable('x-powered-by');
+
+// Apply middleware
+app.use(helmet(helmetConfig));
+app.use(cors(corsConfig));
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Cache prevention middleware
 app.use((_req, res, next) => {
   res.set({
     'Cache-Control': 'private, no-cache, no-store, must-revalidate, max-age=0',
@@ -65,39 +84,19 @@ app.use((_req, res, next) => {
   });
   next();
 });
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// Routes
-app.use('/Add', authMiddleware, addAccessory);
-app.use('/api/getAccessory',firestoreMiddleware, getAccessory);
-app.use('/api/getAll',firestoreMiddleware,getAllAccessories)
-app.use('/api/addAccessories',firestoreMiddleware, addAccessories);
-app.use('/api/updateAccessories',firestoreMiddleware,updateAccessories)
-app.use('/api/deleteAccessory',firestoreMiddleware,deleteOneAccessory)
-app.use('/api/sellAccessories',firestoreMiddleware,sellAccessories)
-app.use('/api/migrate', migrateReceipts)
-app.use('/api/authenticate',authenticate)
-// app.use('/Find', authMiddleware, findOne);
-// app.use('/FindAll', authMiddleware, findAll);
-// app.use('/Update', authMiddleware, updateAccessory);
-// app.use('/Delete', authMiddleware, deleteAccessory);
-// app.use('/Save', authMiddleware, save);
-// app.use('/Complete', authMiddleware, complete);
-// app.use('/authenticate', auth);
-// app.use('/Adduser', authMiddleware, addUser);
-// app.use('/Sendmail', celeryMiddleware, sendComplete);
-// app.use('/incomplete', authMiddleware, sendIncomplete);
-// app.use('/Saved', authMiddleware, savedTransactions);
-// app.use('/celeryAuth', celeryAuth);
-// app.get('/Admin', authMiddleware, adminDashboard);
-// app.get('/sales', authMiddleware, details.detailedSales);
-// app.get('/Products', authMiddleware, details.detailedProducts);
+// API Routes
+app.use('/api/getAccessory', firestoreMiddleware, getAccessory);
+app.use('/api/getAll', firestoreMiddleware, getAllAccessories);
+app.use('/api/addAccessories', firestoreMiddleware, addAccessories);
+app.use('/api/updateAccessories', firestoreMiddleware, updateAccessories);
+app.use('/api/deleteAccessory', firestoreMiddleware, deleteOneAccessory);
+app.use('/api/sellAccessories', firestoreMiddleware, sellAccessories);
+app.use('/api/sendMail', celeryMiddleware, sendSale);
+app.use('/api/authenticate', authenticate);
+app.use('/api/celeryAuth', celeryAuth);
 
-// Response interceptor for fresh JSON responses
+// Response interceptor for JSON timestamps
 app.use((req, res, next) => {
   const originalJson = res.json;
   res.json = function(data) {
@@ -110,34 +109,67 @@ app.use((req, res, next) => {
   next();
 });
 
+// 404 handler
+app.use((req, res, next) => {
+  res.status(404);
+
+  if (req.accepts('html')) {
+    res.render('error', {
+      status: 404,
+      message: 'Page Not Found',
+      description: 'The requested resource could not be found on this server.'
+    });
+    return;
+  }
+
+  if (req.accepts('json')) {
+    res.json({
+      status: 404,
+      error: 'Not Found',
+      message: 'The requested resource could not be found.'
+    });
+    return;
+  }
+
+  res.type('txt').send('Not Found');
+});
+
 // CORS error handler
 app.use((err, req, res, next) => {
   if (err.message === 'Not allowed by CORS') {
     res.status(403).json({
-      message: 'CORS error: Origin not allowed',
-      error: err
+      status: 403,
+      error: 'Forbidden',
+      message: 'CORS error: Origin not allowed'
     });
-  } else {
-    next(err);
+    return;
   }
+  next(err);
 });
 
-// 404 handler
-app.use(function(req, res, next) {
-  next(createError(404));
+// Global error handler
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  const isDev = req.app.get('env') === 'development';
+
+  res.status(status);
+
+  if (req.accepts('html')) {
+    res.render('error', {
+      status: status,
+      message: status === 500 ? 'Internal Server Error' : err.message,
+      description: isDev ? err.stack : 'An unexpected error occurred.',
+      error: isDev ? err : {}
+    });
+    return;
+  }
+
+  res.json({
+    status: status,
+    error: status === 500 ? 'Internal Server Error' : err.message,
+    details: isDev ? err.stack : undefined
+  });
 });
 
-// Error handler
-app.use(function(err, req, res, next) {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-  res.status(err.status || 500);
-  res.render('error');
-});
-
-const PORT = 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
 
 module.exports = app;

@@ -1,4 +1,4 @@
-const Receipt = require('../models/receipts');
+const Receipt = require('../../models/receipts');
 const { Op, fn, col, literal } = require('sequelize');
 const moment = require('moment');
 

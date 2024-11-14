@@ -1,5 +1,5 @@
 const {  DataTypes } = require('sequelize');
-const sequelize =require('../controllers/connection')
+const sequelize =require('../controllers/sequelizerControllers/connection')
 const saved = sequelize.define('sell', {
     id:{
         type: DataTypes.INTEGER,

@@ -1,12 +1,12 @@
 var express = require('express');
 var router = express.Router();
-const Accessory = require('../models/accesories'); // Ensure this path and filename are correct
-const saveDB = require('../models/saved');
-const completeDB = require('../models/complete');
-const receipt = require('../models/receipts');
+const Accessory = require('../../models/accesories'); // Ensure this path and filename are correct
+const saveDB = require('../../models/saved');
+const completeDB = require('../../models/complete');
+const receipt = require('../../models/receipts');
 const { body, validationResult, param } = require('express-validator');
 const {MeiliSearch} = require("meilisearch");
-const redisClient = require('../redis/redis')
+const redisClient = require('../../redis/redis')
 require('dotenv').config();
 const client = new MeiliSearch({
     host: process.env.MEILISEARCH_URL,

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const savedTransactions = require('../models/saved');
+const savedTransactions = require('../../models/saved');
 router.get('/', async (req,res)=>{
     try{
         const data = await savedTransactions.findAll();

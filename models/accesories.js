@@ -1,5 +1,5 @@
 const {  DataTypes } = require('sequelize');
-const sequelize =require('../controllers/connection')
+const sequelize =require('../controllers/sequelizerControllers/connection')
 const accesories = sequelize.define('accesories', {
     id:{
         type: DataTypes.INTEGER,

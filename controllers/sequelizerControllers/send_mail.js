@@ -2,8 +2,8 @@ const nodemailer = require("nodemailer");
 const express = require("express");
 const router = express.Router();
 require('dotenv').config();
-const complete = require('../models/complete');
-const saveDB = require('../models/saved');
+const complete = require('../../models/complete');
+const saveDB = require('../../models/saved');
 
 exports.sendComplete = router.get('/', async (req, res) => {
     try {

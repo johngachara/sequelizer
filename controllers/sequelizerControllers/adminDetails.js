@@ -1,5 +1,5 @@
-const Receipts = require('../models/receipts');
-const Accessories = require('../models/accesories');
+const Receipts = require('../../models/receipts');
+const Accessories = require('../../models/accesories');
 const { Op, literal} = require('sequelize');
 const {fn, col} = require("./connection");
 
