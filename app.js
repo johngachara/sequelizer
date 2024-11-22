@@ -1,12 +1,10 @@
-const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
 const helmet = require("helmet");
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
-const http = require('http');
-
+const  rateLimit  = require('express-rate-limit')
 // Import controllers
 const {
   findOne: getAccessory,
@@ -36,6 +34,19 @@ const helmetConfig = {
   },
   crossOriginResourcePolicy: { policy: "same-site" }
 };
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: false, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message : 'Too many requests try again later'
+})
+const authLimiter = rateLimit({
+  limit : 5,
+  standardHeaders: false,
+  legacyHeaders: false,
+  message : 'Too many requests try again later'
+})
 
 const corsConfig = {
   origin: function (origin, callback) {
@@ -88,16 +99,15 @@ app.use((_req, res, next) => {
 });
 
 // API Routes
-app.use('/api/getAccessory', firestoreMiddleware, getAccessory);
-app.use('/api/getAll', firestoreMiddleware, getAllAccessories);
-app.use('/api/addAccessories', firestoreMiddleware, addAccessories);
-app.use('/api/updateAccessories', firestoreMiddleware, updateAccessories);
-app.use('/api/deleteAccessory', firestoreMiddleware, deleteOneAccessory);
-app.use('/api/sellAccessories', firestoreMiddleware, sellAccessories);
-app.use('/api/sendMail', celeryMiddleware, sendSale);
-app.use('/api/authenticate', authenticate);
-app.use('/api/celeryAuth', celeryAuth);
-app.get('/ip', (request, response) => response.send(request.ip))
+app.use('/api/getAccessory', [firestoreMiddleware , limiter], getAccessory);
+app.use('/api/getAll', [firestoreMiddleware , limiter] ,getAllAccessories);
+app.use('/api/addAccessories', [firestoreMiddleware , limiter], addAccessories);
+app.use('/api/updateAccessories', [firestoreMiddleware,limiter], updateAccessories);
+app.use('/api/deleteAccessory',  [firestoreMiddleware,authLimiter], deleteOneAccessory);
+app.use('/api/sellAccessories', [firestoreMiddleware,limiter], sellAccessories);
+app.use('/api/sendMail', [celeryMiddleware , authLimiter], sendSale);
+app.use('/api/authenticate',authLimiter, authenticate);
+app.use('/api/celeryAuth', authLimiter ,celeryAuth);
 
 // Response interceptor for JSON timestamps
 app.use((req, res, next) => {
