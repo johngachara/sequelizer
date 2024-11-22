@@ -58,6 +58,8 @@ const corsConfig = {
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
+
+app.set('trust proxy', 1);
 // Disable various caching mechanisms
 app.disable('etag');
 app.disable('view cache');
@@ -95,6 +97,7 @@ app.use('/api/sellAccessories', firestoreMiddleware, sellAccessories);
 app.use('/api/sendMail', celeryMiddleware, sendSale);
 app.use('/api/authenticate', authenticate);
 app.use('/api/celeryAuth', celeryAuth);
+app.get('/ip', (request, response) => response.send(request.ip))
 
 // Response interceptor for JSON timestamps
 app.use((req, res, next) => {
