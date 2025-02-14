@@ -5,7 +5,6 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
 const  rateLimit  = require('express-rate-limit')
-// Import controllers
 const {
   findOne: getAccessory,
   findAll: getAllAccessories
@@ -15,8 +14,8 @@ const updateAccessories = require('./controllers/firestoreControllers/updateAcce
 const { deleteOneAccessory } = require('./controllers/firestoreControllers/deleteAccessories');
 const sellAccessories = require('./controllers/firestoreControllers/sellAccessories');
 const sendSale = require('./controllers/firestoreControllers/sendSales');
-
-// Import middleware
+const { register , verify } = require('./auth/webauthnRegistration');
+const {generateOptions , verifyOptions } = require('./auth/webauthnAuthentication');
 const celeryMiddleware = require('./auth/celeryMiddleware');
 const celeryAuth = require('./auth/celeryAuth');
 const authenticate = require('./auth/firestoreJWT');
@@ -107,6 +106,10 @@ app.use('/api/deleteAccessory',  [firestoreMiddleware,authLimiter], deleteOneAcc
 app.use('/api/sellAccessories', [firestoreMiddleware,limiter], sellAccessories);
 app.use('/api/sendMail', [celeryMiddleware , authLimiter], sendSale);
 app.use('/api/authenticate',authLimiter, authenticate);
+app.use('/' , authLimiter, verify)
+app.use('/' , authLimiter ,register)
+app.use('/' , authLimiter , generateOptions)
+app.use('/', authLimiter ,verifyOptions);
 app.use('/api/celeryAuth', authLimiter ,celeryAuth);
 
 // Response interceptor for JSON timestamps
