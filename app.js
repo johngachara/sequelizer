@@ -46,7 +46,12 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message : 'Too many requests try again later'
 })
-
+const webauthnLimiter = rateLimit({
+  limit : 20,
+  standardHeaders: false,
+  legacyHeaders: false,
+  message : 'Too many requests try again later'
+})
 const corsConfig = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
@@ -106,10 +111,10 @@ app.use('/api/deleteAccessory',  [firestoreMiddleware,authLimiter], deleteOneAcc
 app.use('/api/sellAccessories', [firestoreMiddleware,limiter], sellAccessories);
 app.use('/api/sendMail', [celeryMiddleware , authLimiter], sendSale);
 app.use('/api/authenticate',authLimiter, authenticate);
-app.use('/' , authLimiter, verify)
-app.use('/' , authLimiter ,register)
-app.use('/' , authLimiter , generateOptions)
-app.use('/', authLimiter ,verifyOptions);
+app.use('/' , webauthnLimiter, verify)
+app.use('/' , webauthnLimiter ,register)
+app.use('/' , webauthnLimiter , generateOptions)
+app.use('/', webauthnLimiter ,verifyOptions);
 app.use('/api/celeryAuth', authLimiter ,celeryAuth);
 
 // Response interceptor for JSON timestamps
