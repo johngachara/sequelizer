@@ -39,7 +39,7 @@ exports.generateOptions = router.post('/api/generate-auth-options', async (req, 
                 type: 'public-key',
                 transports: passkey.transports || [],
             })),
-            userVerification: 'preferred',
+            userVerification: 'discouraged',
         });
 
         const cleanOptions = JSON.parse(JSON.stringify(options));
@@ -139,7 +139,7 @@ exports.verifyOptions = router.post('/api/verify-authentication', async (req, re
                 credentials: updatedPasskeys,
                 currentAuthenticationOptions: null
             });
-
+            // Remember to remove this token when you find time you dont need it
             // Create Firebase custom token
             const firebaseToken = await auth.createCustomToken(uid);
 
