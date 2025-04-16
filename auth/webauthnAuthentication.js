@@ -114,7 +114,7 @@ exports.verifyOptions = router.post('/api/verify-authentication', async (req, re
                 expectedOrigin: origin,
                 expectedRPID: rpID,
                 credential,
-                requireUserVerification: true
+       //         requireUserVerification: true
             });
         } catch (error) {
             console.error('Verification failed:', {
