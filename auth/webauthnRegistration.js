@@ -106,8 +106,8 @@ exports.verify = router.post('/api/verify-registration', async (req, res) => {
                 expectedChallenge: currentOptions.challenge,
                 expectedOrigin: origin,
                 expectedRPID: rpID,
-               // requireUserPresence : true,
-             //   requireUserVerification : true
+                requireUserPresence : true,
+                requireUserVerification : false
             });
         } catch (error) {
             console.error('Verification failed:', error);
