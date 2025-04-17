@@ -54,7 +54,7 @@ exports.register = router.post('/api/generate-registration-options', async (req,
             })),
             authenticatorSelection: {
                 residentKey: 'preferred',
-                userVerification: 'discouraged',
+                userVerification: 'preferred',
                 authenticatorAttachment: 'platform',
             },
             preferredAuthenticatorType: 'localDevice',

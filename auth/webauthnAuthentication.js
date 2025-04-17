@@ -39,7 +39,9 @@ exports.generateOptions = router.post('/api/generate-auth-options', async (req, 
                 type: 'public-key',
                 transports: passkey.transports || [],
             })),
-     //       userVerification: 'discouraged',
+            authenticatorSelection: {
+                userVerification: 'preferred',
+            },
         });
 
         const cleanOptions = JSON.parse(JSON.stringify(options));
