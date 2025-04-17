@@ -39,7 +39,7 @@ exports.generateOptions = router.post('/api/generate-auth-options', async (req, 
                 type: 'public-key',
                 transports: passkey.transports || [],
             })),
-            userVerification: 'discouraged',
+     //       userVerification: 'discouraged',
         });
 
         const cleanOptions = JSON.parse(JSON.stringify(options));
@@ -141,12 +141,11 @@ exports.verifyOptions = router.post('/api/verify-authentication', async (req, re
             });
             // Remember to remove this token when you find time you dont need it
             // Create Firebase custom token
-            const firebaseToken = await auth.createCustomToken(uid);
+         //   const firebaseToken = await auth.createCustomToken(uid);
 
             return res.json({
                 success: verification.verified,
                 message: 'Authentication successful',
-                firebaseToken
             });
         } else {
             return res.status(401).json({ error: 'Authentication not verified' });

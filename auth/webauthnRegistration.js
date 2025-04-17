@@ -54,7 +54,7 @@ exports.register = router.post('/api/generate-registration-options', async (req,
             })),
             authenticatorSelection: {
                 residentKey: 'preferred',
-                userVerification: 'preferred',
+                userVerification: 'discouraged',
                 authenticatorAttachment: 'platform',
             },
             preferredAuthenticatorType: 'localDevice',
@@ -106,7 +106,7 @@ exports.verify = router.post('/api/verify-registration', async (req, res) => {
                 expectedChallenge: currentOptions.challenge,
                 expectedOrigin: origin,
                 expectedRPID: rpID,
-                requireUserPresence : true,
+               // requireUserPresence : true,
              //   requireUserVerification : true
             });
         } catch (error) {
