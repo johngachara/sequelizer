@@ -15,7 +15,7 @@ const { deleteOneAccessory } = require('./controllers/firestoreControllers/delet
 const sellAccessories = require('./controllers/firestoreControllers/sellAccessories');
 const sendSale = require('./controllers/firestoreControllers/sendSales');
 const { register , verify } = require('./auth/webauthnRegistration');
-const {generateOptions , verifyOptions,publicGenerateAuthOptions,publicVerifyAuthOptions } = require('./auth/webauthnAuthentication');
+const {generateOptions , verifyOptions} = require('./auth/webauthnAuthentication');
 const celeryMiddleware = require('./auth/celeryMiddleware');
 const celeryAuth = require('./auth/celeryAuth');
 const authenticate = require('./auth/firestoreJWT');
@@ -115,8 +115,6 @@ app.use('/' , webauthnLimiter, verify)
 app.use('/' , webauthnLimiter ,register)
 app.use('/' , webauthnLimiter , generateOptions)
 app.use('/', webauthnLimiter ,verifyOptions);
-app.use('/', webauthnLimiter ,publicGenerateAuthOptions);
-app.use('/', webauthnLimiter ,publicVerifyAuthOptions);
 app.use('/api/celeryAuth', authLimiter ,celeryAuth);
 
 // Response interceptor for JSON timestamps
