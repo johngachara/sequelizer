@@ -159,27 +159,22 @@ exports.verifyOptions = router.post('/api/verify-authentication', async (req, re
         return res.status(500).json({ error: error.message });
     }
 });
-
 exports.publicGenerateAuthOptions = router.post('/api/generate-auth-options-public', async (req, res) => {
     try {
-        // Generate a random challenge
-        const challenge = crypto.randomBytes(32).toString('base64');
+        // Generate authentication options with a server-generated challenge
+        const options = await generateAuthenticationOptions({
+            rpID,
+            userVerification: 'preferred',
+            timeout: 60000,
+        });
 
         // Store the challenge temporarily in Firestore with TTL
         const challengeRef = await db.collection('challenges').add({
-            challenge,
+            challenge: options.challenge,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes expiry
         });
 
-        // Generate authentication options
-        // Note: We're not providing allowCredentials since we don't know which user is authenticating
-        const options = await generateAuthenticationOptions({
-            rpID,
-            challenge,
-            userVerification: 'preferred',
-            timeout: 60000,
-        });
         // Store options ID for verification later
         await challengeRef.update({
             optionsId: challengeRef.id
@@ -190,36 +185,11 @@ exports.publicGenerateAuthOptions = router.post('/api/generate-auth-options-publ
         console.error('Error generating authentication options:', error);
         res.status(500).json({ success: false, message: 'Failed to generate authentication options' });
     }
-})
+});
+
 exports.publicVerifyAuthOptions = router.post('/api/verify-auth-options-public', async (req, res) => {
     try {
         const { id, rawId, response, type, clientExtensionResults } = req.body;
-
-        // 1. Use the credential ID to look up the user
-        const credentialSnapshot = await db.collection('credentials')
-            .where('credentialId', '==', id)
-            .limit(1)
-            .get();
-
-        if (credentialSnapshot.empty) {
-            return res.status(400).json({
-                success: false,
-                message: 'Unknown credential'
-            });
-        }
-
-        // Get the user ID from the credential
-        const credentialDoc = credentialSnapshot.docs[0];
-        const { userId, credentialPublicKey, counter } = credentialDoc.data();
-
-        // Get the user document
-        const userDoc = await db.collection('users').doc(userId).get();
-        if (!userDoc.exists) {
-            return res.status(400).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
 
         // Get the latest challenge
         const challengeSnapshot = await db.collection('challenges')
@@ -245,56 +215,110 @@ exports.publicVerifyAuthOptions = router.post('/api/verify-auth-options-public',
             });
         }
 
+        // Search for the credential ID across all users
+        const usersSnapshot = await db.collection('users')
+            .get();
+
+        let foundUser = null;
+        let foundCredential = null;
+
+        // Search through all users to find the matching credential
+        for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data();
+            if (userData.credentials && Array.isArray(userData.credentials)) {
+                const credential = userData.credentials.find(cred => cred.id === id);
+                if (credential) {
+                    foundUser = userDoc;
+                    foundCredential = credential;
+                    break;
+                }
+            }
+        }
+
+        if (!foundUser || !foundCredential) {
+            return res.status(400).json({
+                success: false,
+                message: 'Unknown credential'
+            });
+        }
+
+        const userId = foundUser.id;
+        const userData = foundUser.data();
+
         // Prepare verification data
         const expectedChallenge = challenge;
-        const authenticator = {
-            credentialID: Buffer.from(id, 'base64url'),
-            credentialPublicKey: Buffer.from(credentialPublicKey, 'base64url'),
-            counter,
+
+        // Convert the stored public key back to the correct format
+        const credential = {
+            id: foundCredential.id,
+            publicKey: base64url.toBuffer(foundCredential.publicKey),
+            counter: foundCredential.counter || 0,
+            transports: foundCredential.transports || []
         };
 
         // Verify the authentication response
-        const verification = await verifyAuthenticationResponse({
-            response: {
+        try {
+            const authenticationResponse = {
                 id,
                 rawId,
                 response,
                 type,
-                clientExtensionResults
-            },
-            expectedChallenge,
-            expectedOrigin: origin,
-            expectedRPID: rpID,
-            authenticator,
-        });
-
-        if (verification.verified) {
-            // Update the counter
-            await credentialDoc.ref.update({
-                counter: verification.authenticationInfo.newCounter
-            });
-
-            // Create a Firebase custom token for this user
-            const firebaseToken = await admin.auth().createCustomToken(userId);
-
-            // Get basic user info to return
-            const userInfo = {
-                uid: userId,
-                email: userDoc.data().email,
-                displayName: userDoc.data().username
+                clientExtensionResults: clientExtensionResults || {}
             };
 
-            // Return success with token and user info
-            res.status(200).json({
-                success: true,
-                message: 'Successfully authenticated',
-                firebaseToken,
-                userInfo
+            const verification = await verifyAuthenticationResponse({
+                response: authenticationResponse,
+                expectedChallenge,
+                expectedOrigin: origin,
+                expectedRPID: rpID,
+                credential,
+                requireUserPresence: true,
+                requireUserVerification: false
             });
-        } else {
-            res.status(400).json({
-                success: false,
-                message: 'Authentication failed'
+
+            if (verification.verified) {
+                // Update the counter
+                const newCounter = verification.authenticationInfo.newCounter;
+                const updatedCredentials = userData.credentials.map(cred =>
+                    cred.id === foundCredential.id ? { ...cred, counter: newCounter } : cred
+                );
+
+                // Update the user document with the new counter
+                await foundUser.ref.update({
+                    credentials: updatedCredentials
+                });
+
+                // Create a Firebase custom token for this user
+                const firebaseToken = await admin.auth().createCustomToken(userId);
+
+                // Get basic user info to return
+                const userInfo = {
+                    uid: userId,
+                    email: userData.email,
+                    displayName: userData.username || userData.displayName
+                };
+
+                // Return success with token and user info
+                res.status(200).json({
+                    success: true,
+                    message: 'Successfully authenticated',
+                    firebaseToken,
+                    userInfo
+                });
+            } else {
+                res.status(400).json({
+                    success: false,
+                    message: 'Authentication failed'
+                });
+            }
+        } catch (error) {
+            console.error('Verification failed:', {
+                error: error.message,
+                stack: error.stack
+            });
+            return res.status(400).json({
+                error: 'Authentication verification failed',
+                details: error.message
             });
         }
     } catch (error) {
@@ -304,4 +328,4 @@ exports.publicVerifyAuthOptions = router.post('/api/verify-auth-options-public',
             message: 'Internal server error during verification'
         });
     }
-})
+});
