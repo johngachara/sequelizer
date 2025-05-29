@@ -55,7 +55,7 @@ const webauthnLimiter = rateLimit({
 const corsConfig = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    const allowedOrigins = ['http://localhost:3000', "https://main.gachara.store"];
+    const allowedOrigins = ['http://localhost:3000', "https://pos.alltechnyeri.co.ke"];
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
